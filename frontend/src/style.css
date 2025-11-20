@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+:root {
+  --primary: #2196f3;
+  --primary-contrast: #fff;
+  --bg: #ffffff;
+  --text: #111827;
+  --radius: 12px;
+  --shadow-sm: 0 2px 8px rgba(33,150,243,0.06);
+  --shadow-lg: 0 6px 32px rgba(33,150,243,0.10);
+}
+
+/* ---------------- Base ---------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+}
+
+/* ---------------- App Container ---------------- */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* ---------------- Header ---------------- */
+header {
+  text-align: center;
+  padding: 28px 12px 18px;
+  background: #fff;
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+header h1 {
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ---------------- Navigation ---------------- */
+nav {
+  margin-top: 20px;
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  background: rgba(33,150,243,0.08);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 12px 26px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.nav-btn:hover,
+.nav-btn.active {
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+
+/* ---------------- Main ---------------- */
+main {
+  flex: 1;
+  padding: 36px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* ---------------- Form Card ---------------- */
+.upload-form,
+.upload-face {
+  width: min(100%, 600px);
+  background: #fff;
+  padding: 26px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  text-align: center;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+}
+
+.file-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e5eaf1;
+}
+
+/* Buttons */
+.primary-btn {
+  background: var(--primary);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.primary-btn:hover {
+  opacity: 0.9;
+}
+
+.status-text {
+  text-align: center;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* ---------------- Result Grid ---------------- */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.result-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #e6eaf1;
+}
+
+.result-card img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  margin-bottom: 10px;
+}
+
+/* ---------------- Mobile ---------------- */
+@media (max-width: 720px) {
+  nav {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-btn {
+    width: 100%;
+  }
+
+  .upload-form,
+  .upload-face {
+    padding: 20px 14px;
+  }
+}
