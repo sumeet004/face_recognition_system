@@ -9,6 +9,11 @@ from dotenv import load_dotenv
 from bson import ObjectId
 
 from utils import get_embedding_from_bytes
+import logging
+
+# basic logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("face_recognition_system")
 
 # -----------------------------------------------------
 # GLOBAL CACHE
@@ -95,6 +100,8 @@ def load_embedding_cache():
 
     print(f"✅ Cache loaded: {len(embedding_cache)} embeddings.")
 
+logger.info("Loaded %d embeddings into cache.", len(embedding_cache))
+
 # Load cache on startup
 load_embedding_cache()
 
@@ -111,6 +118,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health")
+async def health():
+    """Lightweight health endpoint for deployment health checks."""
+    try:
+        # quick DB ping
+        client.admin.command('ping')
+        db_ok = True
+    except Exception:
+        db_ok = False
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "cache_count": len(embedding_cache)
+    }
+
 # -----------------------------------------------------
 # 📤 UPLOAD: Extract embedding + store image in GridFS
 # -----------------------------------------------------
@@ -125,17 +148,22 @@ async def upload_image(
     # Read file
     try:
         content = await file.read()
-        if not content:
-            raise ValueError("Empty file.")
-    except:
+    except Exception as e:
+        logger.exception("Failed to read uploaded file: %s", str(e))
         raise HTTPException(status_code=400, detail="Cannot read uploaded file.")
+
+    if not content:
+        logger.warning("Empty file uploaded: filename=%s", getattr(file, 'filename', None))
+        raise HTTPException(status_code=400, detail="Empty file uploaded.")
 
     # Get embedding
     try:
         emb = get_embedding_from_bytes(content)
     except ValueError as ve:
+        logger.warning("No face detected during upload: filename=%s, err=%s", getattr(file, 'filename', None), str(ve))
         raise HTTPException(status_code=400, detail=f"No face detected: {str(ve)}")
     except Exception as e:
+        logger.exception("Embedding error during upload for filename=%s: %s", getattr(file, 'filename', None), str(e))
         raise HTTPException(status_code=500, detail=f"Embedding error: {str(e)}")
 
     emb = emb / np.linalg.norm(emb)
@@ -148,6 +176,7 @@ async def upload_image(
             contentType=file.content_type
         )
     except Exception as e:
+        logger.exception("GridFS error while storing file=%s: %s", getattr(file, 'filename', None), str(e))
         raise HTTPException(status_code=500, detail=f"GridFS error: {str(e)}")
 
     # Save metadata
@@ -165,6 +194,7 @@ async def upload_image(
             fs.delete(grid_id)
         except:
             pass
+        logger.exception("DB insert error for file=%s: %s", getattr(file, 'filename', None), str(e))
         raise HTTPException(status_code=500, detail=f"DB insert error: {str(e)}")
 
     # Update cache
@@ -194,23 +224,29 @@ async def search_image(
     # Read file
     try:
         content = await file.read()
-        if not content:
-            raise ValueError("Empty file.")
-    except:
+    except Exception as e:
+        logger.exception("Failed to read search file: %s", str(e))
         raise HTTPException(status_code=400, detail="Cannot read uploaded file.")
+
+    if not content:
+        logger.warning("Empty search file uploaded: filename=%s", getattr(file, 'filename', None))
+        raise HTTPException(status_code=400, detail="Empty file uploaded.")
 
     # Compute embedding
     try:
         input_emb = get_embedding_from_bytes(content)
     except ValueError as ve:
+        logger.warning("No face detected during search: filename=%s, err=%s", getattr(file, 'filename', None), str(ve))
         raise HTTPException(status_code=400, detail=f"No face detected: {str(ve)}")
     except Exception as e:
+        logger.exception("Embedding error during search for filename=%s: %s", getattr(file, 'filename', None), str(e))
         raise HTTPException(status_code=500, detail=f"Embedding error: {str(e)}")
 
     # Normalize
     try:
         input_emb = input_emb / np.linalg.norm(input_emb)
-    except:
+    except Exception as e:
+        logger.exception("Normalization error for search file=%s: %s", getattr(file, 'filename', None), str(e))
         raise HTTPException(status_code=500, detail="Normalization error.")
 
     matches = []
@@ -221,7 +257,8 @@ async def search_image(
 
         try:
             dist = float(np.linalg.norm(input_emb - stored_emb))
-        except:
+        except Exception as e:
+            logger.exception("Distance computation error: %s", str(e))
             continue
 
         if dist <= float(threshold):
@@ -230,7 +267,8 @@ async def search_image(
                 file_obj = fs.get(grid_id)
                 img_bytes = file_obj.read()
                 img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-            except:
+            except Exception as e:
+                logger.exception("Failed to read image from GridFS during search for grid_id=%s: %s", str(entry.get("gridfs_id")), str(e))
                 continue
 
             matches.append({

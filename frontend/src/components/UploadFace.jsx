@@ -7,7 +7,7 @@ export default function UploadFace() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
   const uploadFace = async () => {
     if (!name.trim()) {
@@ -38,8 +38,9 @@ export default function UploadFace() {
         setStatus("Upload failed. Please try again.");
       }
     } catch (err) {
-      console.error(err);
-      setStatus("Error uploading face.");
+      console.error("Upload error:", err);
+      const serverMsg = err?.response?.data?.detail || err?.response?.data || err?.message;
+      setStatus(serverMsg || "Error uploading face.");
     }
 
     setLoading(false);

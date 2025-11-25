@@ -1,0 +1,29 @@
+# Render service declaration for Face Recognition System backend
+# Replace placeholders (e.g. repo name) if needed. Render will read this file when you import the repo.
+
+services:
+  - type: web
+    name: face-rec-backend
+    env: docker
+    # Path to Dockerfile relative to repository root
+    dockerfilePath: backend/Dockerfile
+    # Branch to deploy automatically
+    branch: main
+    # Health check path - we added /health endpoint to the app
+    healthCheckPath: /health
+    # Auto-deploy on push
+    autoDeploy: true
+    # Instance plan: starter, standard, professional (choose according to needs)
+    plan: starter
+    # Instance region (optional). Example: oregon, frankfurt, sydney
+    region: oregon
+    # Optional: instance type override (uncomment to force a larger instance)
+    # instanceType: standard-1x
+    envVars:
+      - key: MONGODB_URI
+        # Leave value blank here; set as a secret in Render dashboard for security
+        value: ""
+      - key: DB_NAME
+        value: "face_db"
+
+# You can also declare other services (workers, cron jobs) here if you later split embedding work.

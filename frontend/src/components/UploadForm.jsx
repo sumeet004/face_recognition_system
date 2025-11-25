@@ -7,7 +7,7 @@ export default function UploadForm() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
   const searchFaces = async () => {
     if (!file) {
@@ -35,8 +35,10 @@ export default function UploadForm() {
         );
       }
     } catch (error) {
-      console.error(error);
-      setStatus("Error occurred while searching faces.");
+      // Prefer server-provided message when available
+      console.error("Search error:", error);
+      const serverMsg = error?.response?.data?.detail || error?.response?.data || error?.message;
+      setStatus(serverMsg || "Error occurred while searching faces.");
     }
 
     setLoading(false);
