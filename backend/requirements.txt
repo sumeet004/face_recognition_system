@@ -2,11 +2,7 @@ fastapi
 uvicorn[standard]
 python-multipart
 pymongo
-deepface
+deepface==0.0.79
 opencv-python-headless
-numpy
+numpy<2
 python-dotenv
-
-# Use PyTorch backend for DeepFace (avoid TensorFlow)
-torch
-torchvision

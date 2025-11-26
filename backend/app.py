@@ -100,10 +100,11 @@ def load_embedding_cache():
 
     print(f"✅ Cache loaded: {len(embedding_cache)} embeddings.")
 
+load_embedding_cache()
 logger.info("Loaded %d embeddings into cache.", len(embedding_cache))
 
 # Load cache on startup
-load_embedding_cache()
+
 
 # -----------------------------------------------------
 # FASTAPI APP + CORS
