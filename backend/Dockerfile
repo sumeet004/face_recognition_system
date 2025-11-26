@@ -1,7 +1,7 @@
 # Backend Dockerfile for Face Recognition System
 # Uses slim Python image and installs required OS packages for OpenCV/DeepFace
 
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
