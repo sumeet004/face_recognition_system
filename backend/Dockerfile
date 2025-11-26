@@ -1,12 +1,8 @@
-# Backend Dockerfile for Face Recognition System
-# Uses slim Python image and installs required OS packages for OpenCV/DeepFace
-
 FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install system deps commonly needed by OpenCV / DeepFace
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1 \
@@ -17,15 +13,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install PyTorch CPU wheels from official index
+# Install PyTorch CPU
 RUN pip install --upgrade pip setuptools wheel
 RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Install other requirements
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+# PREVENT TENSORFLOW FROM INSTALLING
+RUN pip uninstall -y tensorflow tensorboard tf-keras tensorflow-estimator || true
 
-# Copy application code
+# Install app requirements
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-deps -r /app/requirements.txt
+
+# Copy the app
 COPY . /app
 
 EXPOSE 8000
