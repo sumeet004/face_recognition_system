@@ -6,3 +6,7 @@ deepface
 opencv-python-headless
 numpy
 python-dotenv
+
+# FIX for DeepFace/RetinaFace/TensorFlow compatibility
+tensorflow==2.14.0
+tf-keras
