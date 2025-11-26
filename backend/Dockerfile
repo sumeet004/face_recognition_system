@@ -17,10 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy requirements and install
+# Install PyTorch CPU wheels from official index
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Install other requirements
 COPY requirements.txt /app/requirements.txt
-RUN python -m pip install --upgrade pip
-RUN python -m pip install -r /app/requirements.txt
+RUN pip install -r /app/requirements.txt
 
 # Copy application code
 COPY . /app

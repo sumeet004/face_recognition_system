@@ -7,5 +7,6 @@ opencv-python-headless
 numpy
 python-dotenv
 
-# FIX for DeepFace/RetinaFace/TensorFlow compatibility
-tensorflow==2.10.0
+# Use PyTorch backend for DeepFace (avoid TensorFlow)
+torch
+torchvision

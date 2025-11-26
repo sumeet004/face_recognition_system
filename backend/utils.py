@@ -1,7 +1,10 @@
-import numpy as np
-from deepface import DeepFace
-import io
 import os
+
+# Force DeepFace to use PyTorch backend
+os.environ["DEEPFACE_BACKEND"] = "torch"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+import io
 import logging
 import tempfile
 import numpy as np
@@ -11,10 +14,10 @@ from deepface import DeepFace
 logger = logging.getLogger("face_recognition_system.utils")
 
 # Configuration: preferred detector and image resizing
-PREFERRED_DETECTOR = "opencv"
+PREFERRED_DETECTOR = "retinaface"  # better accuracy for face detection
 MAX_IMAGE_DIM = 480  # resize largest side to this (px)
 
-# Cache built models by name to avoid re-loading
+# Cache built models
 _MODEL_CACHE = {}
 
 
@@ -30,14 +33,13 @@ def _get_model(model_name: str):
 
 
 def _prepare_image_file(img_bytes: bytes, max_dim: int = MAX_IMAGE_DIM) -> str:
-    """Write bytes to a temporary JPEG file after converting to RGB and resizing."""
+    """Write bytes to a temporary JPEG file after resizing."""
     fd, tmp_path = tempfile.mkstemp(suffix=".jpg")
     os.close(fd)
 
     try:
         with Image.open(io.BytesIO(img_bytes)) as im:
             im = im.convert("RGB")
-            # Resize while preserving aspect ratio
             w, h = im.size
             max_side = max(w, h)
             if max_side > max_dim:
@@ -47,7 +49,7 @@ def _prepare_image_file(img_bytes: bytes, max_dim: int = MAX_IMAGE_DIM) -> str:
 
             im.save(tmp_path, format="JPEG", quality=85)
     except Exception as e:
-        logger.exception("Failed to prepare temp image for embedding: %s", str(e))
+        logger.exception("Failed to prepare temp image: %s", str(e))
         try:
             os.remove(tmp_path)
         except Exception:
@@ -58,52 +60,37 @@ def _prepare_image_file(img_bytes: bytes, max_dim: int = MAX_IMAGE_DIM) -> str:
 
 
 def get_embedding_from_bytes(img_bytes, model_name="ArcFace", detector: str = None):
-    """Get a face embedding from raw image bytes using a cached model and single detector.
-
-    - Resizes the image to `MAX_IMAGE_DIM` on the longest side to speed up detection.
-    - Uses a cached model built with `DeepFace.build_model` to avoid repeated model init.
-    - Uses `detector` if provided, otherwise `PREFERRED_DETECTOR`.
-    """
-
+    """Get embedding from raw image bytes."""
     detector_backend = detector or PREFERRED_DETECTOR
-
     tmp_path = None
+
     try:
         tmp_path = _prepare_image_file(img_bytes, MAX_IMAGE_DIM)
 
-        # Call DeepFace.represent. Older DeepFace versions don't accept a prebuilt
-        # `model` argument, so pass only model_name and detector_backend here.
         reps = DeepFace.represent(
             img_path=tmp_path,
             model_name=model_name,
             detector_backend=detector_backend,
+            enforce_detection=False,
+            align=True,
         )
 
         if not reps:
             raise ValueError("No face detected")
 
-        emb_val = None
         if isinstance(reps, dict):
             emb_val = reps.get("embedding") or reps.get("rep")
-        elif isinstance(reps, list) and len(reps) > 0:
-            first = reps[0]
-            if isinstance(first, dict):
-                emb_val = first.get("embedding") or first.get("rep")
+        elif isinstance(reps, list) and len(reps) > 0 and isinstance(reps[0], dict):
+            emb_val = reps[0].get("embedding") or reps[0].get("rep")
+        else:
+            emb_val = reps
 
-        if emb_val is None:
-            # try casting reps directly
-            try:
-                emb = np.array(reps, dtype=float)
-                if emb.size > 0:
-                    return emb
-            except Exception:
-                pass
+        return np.array(emb_val, dtype=float)
 
-        emb = np.array(emb_val, dtype=float)
-        return emb
     except Exception as e:
-        logger.exception("Embedding extraction failed (detector=%s): %s", detector_backend, str(e))
+        logger.exception("Embedding extraction failed: %s", str(e))
         raise
+
     finally:
         if tmp_path:
             try:
@@ -112,9 +99,9 @@ def get_embedding_from_bytes(img_bytes, model_name="ArcFace", detector: str = No
                 pass
 
 
-# Preload the default model once at import time to avoid per-request model init.
+# Preload ArcFace model at import
 try:
     _get_model("ArcFace")
     logger.info("Preloaded ArcFace model at import time.")
 except Exception as e:
-    logger.warning("Preloading ArcFace model failed (will build on first request): %s", str(e))
+    logger.warning("Model preload failed: %s", str(e))
