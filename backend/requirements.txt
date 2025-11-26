@@ -8,5 +8,4 @@ numpy
 python-dotenv
 
 # FIX for DeepFace/RetinaFace/TensorFlow compatibility
-tensorflow==2.14.0
-tf-keras
+tensorflow==2.10.0
